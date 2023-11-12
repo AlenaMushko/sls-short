@@ -1,0 +1,48 @@
+{
+  "name": "sls-short",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Alona",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.445.0",
+    "@aws-sdk/client-secrets-manager": "^3.445.0",
+    "@aws-sdk/client-ses": "^3.449.0",
+    "@aws-sdk/client-sqs": "^3.449.0",
+    "@aws-sdk/lib-dynamodb": "^3.445.0",
+    "@middy/core": "^4.6.6",
+    "@middy/http-error-handler": "^4.6.6",
+    "@middy/http-event-normalizer": "^4.6.6",
+    "@middy/http-json-body-parser": "^4.6.6",
+    "@middy/validator": "^4.6.6",
+    "aws-sdk": "^2.1490.0",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
+    "crypto": "^1.0.1",
+    "jose": "^5.1.0",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.126",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node-jose": "^1.1.13",
+    "@types/uuid": "^9.0.7",
+    "@typescript-eslint/eslint-plugin": "^6.10.0",
+    "@typescript-eslint/parser": "^6.10.0",
+    "esbuild": "^0.19.5",
+    "eslint": "^8.53.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-plugin-prettier": "^5.0.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "prettier": "^3.0.3",
+    "serverless-dotenv-plugin": "^6.0.0",
+    "serverless-esbuild": "^1.48.5",
+    "serverless-offline": "^13.2.1"
+  }
+}

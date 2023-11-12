@@ -1,0 +1,217 @@
+service: sls-short
+frameworkVersion: '3'
+
+plugins:
+  - serverless-esbuild
+  - serverless-offline
+  - serverless-dotenv-plugin
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: eu-west-1
+  environment:
+    USERS_TABLE_NAME: UsersTable-${self:provider.stage}
+    TOKENS_TABLE_NAME: TokensTable-${self:provider.stage}
+    LINK_TABLE_NAME: LinkTable-${self:provider.stage}
+    MAIL_QUEUE_URL: ${self:custom.mailQueue.url}
+  memorySize: 256
+  stage: ${opt:stage, 'dev'}
+  iamRoleStatements:
+    - ${file(iam/SendMail.yml):SendMailAIM}
+    - ${file(iam/MailQueueIAM.yml):MailQueueIAM}
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DeleteItem
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:Query
+        - dynamodb:UpdateItem
+        - dynamodb:Scan
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.USERS_TABLE_NAME}
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.USERS_TABLE_NAME}/index/EmailIndex
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.LINK_TABLE_NAME}
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.LINK_TABLE_NAME}/index/UserIdIndex
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.LINK_TABLE_NAME}/index/ShortLinkIndex
+
+    - Effect: Allow
+      Action:
+        - dynamodb:DeleteItem
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:Query
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.TOKENS_TABLE_NAME}
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.TOKENS_TABLE_NAME}/index/UserIdIndex
+        - arn:aws:dynamodb:${self:provider.region}:173045083675:table/${self:provider.environment.TOKENS_TABLE_NAME}/index/CreatedAtIndex
+
+    - Effect: Allow
+      Action:
+        - secretsmanager:GetSecretValue
+        - secretsmanager:CreateSecret
+      Resource: '*'
+custom:
+  esbuild:
+    bundle: true
+    minify: true
+    sourcemap: true
+    exclude: [ 'aws-sdk' ]
+    target: 'es2020'
+  mailQueue:
+    name: MailQueue-${self:provider.stage}
+    arn: 'arn:aws:sqs:eu-west-1:173045083675:MailQueue-dev'
+    url: 'https://sqs.eu-west-1.amazonaws.com/173045083675/MailQueue-dev'
+
+resources:
+  Resources:
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: UsersTable-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    TokensTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: ${self:provider.environment.TOKENS_TABLE_NAME}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: tokenId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: createdAt
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tokenId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIdIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: CreatedAtIndex
+            KeySchema:
+              - AttributeName: createdAt
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    LinkTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: LinkTable-${self:provider.stage}
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: linkId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: shortLink
+            AttributeType: S
+        KeySchema:
+          - AttributeName: linkId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIdIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+          - IndexName: ShortLinkIndex
+            KeySchema:
+              - AttributeName: shortLink
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+
+    MailQueue: ${file(resources/MailQueue.yml):MailQueue}
+  Outputs:
+    MailQueueArn: ${file(resources/MailQueue.yml):Outputs.MailQueueArn}
+    MailQueueUrl: ${file(resources/MailQueue.yml):Outputs.MailQueueUrl}
+
+functions:
+  signUp:
+    handler: src/handlers/user/signUp.handler
+    events:
+      - httpApi:
+          path: /auth/sign-up
+          method: POST
+
+  signIn:
+    handler: src/handlers/user/signIn.handler
+    events:
+      - httpApi:
+          path: /auth/sign-in
+          method: POST
+
+  createLink:
+    handler: src/handlers/link/createLink.handler
+    events:
+      - httpApi:
+          path: /link
+          method: POST
+
+  getListOwnerLinks:
+    handler: src/handlers/link/listLink.handler
+    events:
+      - httpApi:
+          path: /link/{userId}/list
+          method: GET
+
+  deactivateLink:
+    handler: src/handlers/link/deactivateLink.handler
+    events:
+      - httpApi:
+          path: /link/{userId}/deactivate/{linkId}
+          method: PUT
+
+  visitedLink:
+    handler: src/handlers/link/visitLink.handler
+    events:
+      - httpApi:
+          path: /{shortId}
+          method: GET
+
+  sendEmail:
+    handler: src/handlers/sendEmail.handler
+    events:
+      - sqs:
+          arn: ${self:custom.mailQueue.arn}
+          batchSize: 10
+          maximumBatchingWindow: 10
+
+  oldTokensRemover:
+    handler: src/handlers/user/oldTokensRemover.handler
+    events:
+      - schedule:
+          rate: cron(0 3 * * ? *)
+          enabled: false
+
+  cronDeactivateLinks:
+    handler: src/handlers/link/cronDeactivateLinks.handler
+    events:
+      - schedule:
+          rate: cron(0 * * * ? *)
+          enabled: false
+
