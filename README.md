@@ -20,17 +20,21 @@
 ###### Messaging: Amazon SQS for queue management and Amazon SES for email notifications.
 
 ## Getting Started
-###### AWS CLI configured with appropriate permissions.
-###### Node.js v18.x or later.
-###### Serverless framework installed globally.
+### Ensure AWS CLI is installed on your system. If not, download and install it from https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html
+### Node.js version 18.x or later should be installed. Download it from the official Node.js website.
+### Serverless framework installed globally. [npm install -g serverless]
+### Run AWS Configure Command:  [aws configure]
+### Enter Credentials:
+##### AWS Access Key ID: Enter AWS_S3_ACCESS_KEY
+##### AWS Secret Access Key: Enter AWS_S3_SECRET_ACCESS_KEY
+##### Default Region Name: eu-west-1
+##### Default Output Format: json (You can leave this blank)
 
-###### Clone the repository:
-###### git clone https://github.com/AlenaMushko/sls-short
-###### cd sls-short
-###### npm install
-
-#### Deployment
-###### sls deploy --stage dev
+### Clone the repository:
+### git clone https://github.com/AlenaMushko/sls-short
+### cd sls-short
+### npm install
+### sls deploy --stage dev
 
 ## Usage
 ###### Sign Up: Register a new user by sending a POST request to /auth/sign-up.

@@ -32,7 +32,7 @@ export async function isLogin(event: APIGatewayEvent): Promise<IUserToken> {
     const userById = await docClient.send(commandUserById);
     const owner = userById.Item as IUserToken;
 
-    if (!userById){
+    if (!userById) {
       throw new ApiError("User not found", 404);
     }
 
