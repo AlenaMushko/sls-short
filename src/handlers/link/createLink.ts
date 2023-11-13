@@ -51,7 +51,7 @@ async function createLink(
         linkLifeTime = new Date(Date.now() + 7 * oneDayS).toISOString();
         break;
       default:
-        throw new Error(`Invalid life time value: ${lifeTime}`);
+        throw new ApiError(`Invalid life time value: ${lifeTime}`, 400);
     }
 
     const newLinkItem: ILink = {

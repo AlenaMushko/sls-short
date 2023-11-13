@@ -1,0 +1,277 @@
+openapi: 3.0.0
+info:
+  title: Sls-Short API
+  version: 1.0.0
+  description: API for Sls-Short, a serverless URL shortening service.
+  contact:
+    email: myshko.alona@gmail.com
+tags:
+  - name: auth
+    description: register and login
+  - name: link
+    description: Everything about short link
+paths:
+  /auth/sign-up:
+    post:
+      tags:
+        - auth
+      summary: Sign up a new user
+      description: Registers a new user and returns a JWE token
+      parameters:
+        - in: body
+          name: body
+          description: User data for sign-up
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        '201':
+          description: You are registered. Please login
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/JWEToken'
+        '400':
+          description: There were validation errors with your request
+  /auth/sign-in:
+    post:
+      tags:
+        - auth
+      summary: Sign in an existing user
+      description: Authenticates a user and returns a JWE token.
+      parameters:
+        - in: body
+          name: body
+          description: User credentials for sign-in
+          required: true
+          schema:
+            $ref: '#/definitions/User'
+      responses:
+        '200':
+          description: Successful sign in
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/JWEToken'
+        '401':
+          description: Invalid email or password
+  /link:
+    post:
+      tags:
+        - link
+      summary: Create a new link
+      description: Creates a new short link for the given URL.
+      parameters:
+        - in: body
+          name: body
+          description: Data to create a new link
+          required: true
+          schema:
+            $ref: '#/definitions/NewLink'
+      responses:
+        '200':
+          description: Created a short link
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/ShortLinkResponse'
+        '400':
+          description: Invalid input data
+  /link/{userId}/list:
+    get:
+      tags:
+        - link
+      summary: List all links for a current user
+      description: Retrieves a list of all links created by a specific user.
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+          description: User ID to fetch links for
+      responses:
+        '200':
+          description: List of links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/definitions/LinkDetails'
+
+        '401':
+          description: Authorization header missing
+        '404':
+          description: User not found
+  /link/{userId}/deactivate/{linkId}:
+    put:
+      tags:
+        - link
+      summary: Deactivate a specific link
+      description: Deactivates a link by changing its status to inactive.
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          type: string
+          description: User ID of the link owner
+        - in: path
+          name: linkId
+          required: true
+          type: string
+          description: Link ID to be deactivated
+      responses:
+        '200':
+          description: Link ${originalLink} successfully deactivated
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/definitions/DeactivationResponse'
+        '401':
+          description: Authorization header missing
+        '404':
+          description: Link not found or access denied
+  /{shortId}:
+    get:
+      tags:
+        - link
+      summary: Visit a short link
+      description: Redirects to the original URL associated with the given short link ID.
+      parameters:
+        - in: path
+          name: shortId
+          required: true
+          type: string
+          description: Short link ID to visit
+      responses:
+        '200':
+          description: Original link to redirect to
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: '#/definitions/OriginalLinkResponse'
+        '404':
+          description: Link not found or Link not active
+definitions:
+  User:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+        format: email
+      password:
+        type: string
+        format: password
+  JWEToken:
+    type: object
+    properties:
+      token:
+        type: string
+        description: JWE token for authentication
+  NewLink:
+    type: object
+    required:
+      - originalLink
+      - lifeTime
+    properties:
+      originalLink:
+        type: string
+        format: uri
+      lifeTime:
+        type: string
+        enum:
+          - AFTER_THE_LINK
+          - 1_DAY
+          - 3_DAYS
+          - 7_DAYS
+        examples:
+          afterLink:
+            value: "AFTER_THE_LINK"
+            summary: "Immediately after the link is visited"
+          oneDay:
+            value: "1_DAY"
+            summary: "Active for 1 day"
+          threeDays:
+            value: "3_DAYS"
+            summary: "Active for 3 days"
+          sevenDays:
+            value: "7_DAYS"
+            summary: "Active for 7 days"
+  ShortLinkResponse:
+    type: object
+    properties:
+      shortLink:
+        type: string
+        description: Shortened URL
+  LinkDetails:
+    type: object
+    properties:
+      shortLink:
+        type: string
+        description: Shortened URL
+      clicks:
+        type: integer
+        description: Number of times the link was clicked
+      isActive:
+        type: boolean
+        description: Whether the link is active
+  DeactivationResponse:
+    type: object
+    properties:
+      message:
+        type: string
+        description: Deactivation message
+  OriginalLinkResponse:
+    type: object
+    properties:
+      link:
+        type: string
+        description: Original URL to redirect to
+components:
+  schemas:
+    userSchema:
+      type: object
+      properties:
+        userId:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    linkSchema:
+      type: object
+      properties:
+        linkId:
+          type: string
+        originalLink:
+          type: string
+        shortLink:
+          type: string
+        clicks:
+          type: number
+        lifeTime:
+          type: string
+        createdAt:
+          type: string
+        isActive:
+          type: boolean
+        userId:
+          type: string
+        userEmail:
+          type: string
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/AlenaMushko/Sls-Short/1.0.0

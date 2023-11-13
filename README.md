@@ -48,7 +48,7 @@
 ###### serverless.postman_collection.json
 
 ## OpenAPI 
-###### 
+###### https://app.swaggerhub.com/apis-docs/AlenaMushko/Sls-Short/1.0.0#/link/post_link
 
 ## Task 
 ###### https://docs.google.com/document/d/1FibDkSVPWFRydyNhuwo7T8kLFgwsc-Crve-OtpNQu10/edit?usp=sharing
