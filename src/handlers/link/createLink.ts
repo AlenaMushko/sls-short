@@ -56,7 +56,7 @@ async function createLink(
 
     const newLinkItem: ILink = {
       linkId: uuid(),
-      originalLink: originalLink,
+      originalLink: originalLink.trim(),
       shortLink,
       clicks: 0,
       lifeTime: linkLifeTime,

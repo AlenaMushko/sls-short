@@ -37,7 +37,7 @@ async function signUp(event: APIGatewayEvent): Promise<APIGatewayProxyResult> {
       IndexName: "EmailIndex",
       KeyConditionExpression: "email = :email",
       ExpressionAttributeValues: {
-        ":email": email,
+        ":email": email.trim().toLowerCase(),
       },
     });
 
@@ -47,12 +47,12 @@ async function signUp(event: APIGatewayEvent): Promise<APIGatewayProxyResult> {
       throw new ApiError("Email already exists", 409);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 8);
+    const hashedPassword = await bcrypt.hash(password.trim(), 8);
     const date = new Date().toISOString();
 
     const newUser: IUser = {
       userId: uuid(),
-      email,
+      email: email.trim().toLowerCase(),
       password: hashedPassword,
       createdAt: date,
       updatedAt: date,

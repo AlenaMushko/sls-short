@@ -34,7 +34,7 @@ async function signIn(event: APIGatewayEvent): Promise<APIGatewayProxyResult> {
       IndexName: "EmailIndex",
       KeyConditionExpression: "email = :email",
       ExpressionAttributeValues: {
-        ":email": email,
+        ":email": email.trim().toLowerCase(),
       },
     });
 
@@ -44,12 +44,15 @@ async function signIn(event: APIGatewayEvent): Promise<APIGatewayProxyResult> {
     }
 
     const user = userByEmail.Items[0];
-    const isMatched = await bcrypt.compare(password, user.password);
-    if (!isMatched || user.email !== email) {
+    const isMatched = await bcrypt.compare(password.trim(), user.password);
+    if (!isMatched || user.email !== email.trim().toLowerCase()) {
       throw new ApiError("Invalid email or password", 401);
     }
 
-    const JWE = await createToken({ userId: user.userId, email });
+    const JWE = await createToken({
+      userId: user.userId,
+      email: email.trim().toLowerCase(),
+    });
     const date = new Date().toISOString();
     const newJWEItem = {
       tokenId: uuid(),
